@@ -173,7 +173,7 @@ Open:
 frontend/index.html
 ```
 
-# Project Purpose
+# 🎯 Project Purpose
 
 This project was created as a portfolio demonstration for IT Support / Network Engineering roles.
 
@@ -187,7 +187,7 @@ The goal is to demonstrate understanding of:
 
 ---
 
-## Author
+## 👨🏽‍💻 Author
 
 Kingsley
 
