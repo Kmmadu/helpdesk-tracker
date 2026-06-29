@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict
 from enum import Enum
 
 class TicketStatus(str, Enum):
@@ -21,6 +21,11 @@ class TicketCategory(str, Enum):
     SOFTWARE = "Software"
     ACCESS = "Access"
 
+class TicketSource(str, Enum):
+    MANUAL = "Manual"
+    EMAIL = "Email"
+    API = "API"
+
 # Ticket Schemas
 class TicketBase(BaseModel):
     title: str = Field(..., max_length=200)
@@ -31,7 +36,10 @@ class TicketBase(BaseModel):
     assigned_to: Optional[str] = Field(None, max_length=100)
 
 class TicketCreate(TicketBase):
-    pass
+    source: Optional[TicketSource] = TicketSource.MANUAL
+    email_message_id: Optional[str] = None
+    email_from: Optional[str] = None
+    email_subject: Optional[str] = None
 
 class TicketUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=200)
@@ -46,6 +54,12 @@ class Ticket(TicketBase):
     status: TicketStatus
     created_at: datetime
     updated_at: Optional[datetime] = None
+    source: TicketSource = TicketSource.MANUAL
+    email_message_id: Optional[str] = None
+    email_from: Optional[str] = None
+    email_subject: Optional[str] = None
+    processed_at: Optional[datetime] = None
+    email_attachments: Optional[List[Dict]] = None
     
     class Config:
         from_attributes = True
@@ -110,3 +124,30 @@ class DashboardStats(BaseModel):
     resolved_tickets: int
     critical_tickets: int
     most_common_category: Optional[str]
+
+# Email Log Schemas
+class EmailLogBase(BaseModel):
+    message_id: str
+    from_address: str
+    subject: Optional[str] = None
+    status: str
+    error_message: Optional[str] = None
+    ticket_id: Optional[int] = None
+    retry_count: int = 0
+
+class EmailLogCreate(EmailLogBase):
+    pass
+
+class EmailLog(EmailLogBase):
+    id: int
+    processed_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class EmailStats(BaseModel):
+    total_processed: int
+    today: int
+    failed: int
+    success_rate: float
+    last_processed: Optional[datetime]

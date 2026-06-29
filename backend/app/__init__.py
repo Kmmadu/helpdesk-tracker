@@ -1,1 +1,3 @@
-# This file makes the app directory a Python package
+"""
+Helpdesk Ticketing System - Backend Application
+"""

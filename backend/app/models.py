@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, JSON, Boolean, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from .database import Base  # Changed to relative import
+from .database import Base
 import enum
+from typing import Optional
 
 class TicketStatus(str, enum.Enum):
     OPEN = "Open"
@@ -36,9 +37,27 @@ class Ticket(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # Email-specific fields
+    source = Column(String(20), nullable=False, default="Manual")
+    email_message_id = Column(String(255), nullable=True, unique=True)
+    email_from = Column(String(255), nullable=True)
+    email_subject = Column(String(500), nullable=True)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+    email_attachments = Column(JSON, nullable=True)
+    
     # Relationships
     activities = relationship("Activity", back_populates="ticket", cascade="all, delete-orphan")
     resolution = relationship("Resolution", back_populates="ticket", uselist=False, cascade="all, delete-orphan")
+    
+    # Indexes
+    __table_args__ = (
+        Index('ix_tickets_email_message_id', 'email_message_id'),
+        Index('ix_tickets_source', 'source'),
+        Index('ix_tickets_created_at', 'created_at'),
+        Index('ix_tickets_status', 'status'),
+        Index('ix_tickets_category', 'category'),
+        Index('ix_tickets_priority', 'priority'),
+    )
 
 class Activity(Base):
     __tablename__ = "activities"
@@ -76,3 +95,34 @@ class KnowledgeArticle(Base):
     category = Column(String(50), nullable=False)
     created_date = Column(DateTime(timezone=True), server_default=func.now())
     ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=True)
+
+class EmailLog(Base):
+    __tablename__ = "email_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(String(255), nullable=False)
+    from_address = Column(String(255), nullable=False)
+    subject = Column(String(500), nullable=True)
+    status = Column(String(50), nullable=False)
+    error_message = Column(Text, nullable=True)
+    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=True)
+    processed_at = Column(DateTime(timezone=True), server_default=func.now())
+    retry_count = Column(Integer, default=0)
+    
+    __table_args__ = (
+        Index('ix_email_logs_message_id', 'message_id'),
+        Index('ix_email_logs_status', 'status'),
+        Index('ix_email_logs_processed_at', 'processed_at'),
+    )
+    
+    # Relationship
+    ticket = relationship("Ticket")
+
+class Setting(Base):
+    __tablename__ = "settings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), nullable=False, unique=True)
+    value = Column(Text, nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    is_encrypted = Column(Boolean, default=False)

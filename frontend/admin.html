@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Settings - NOC Helpdesk</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .settings-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .settings-card h3 {
+            margin-bottom: 15px;
+            color: var(--accent-blue);
+        }
+        .setting-group {
+            margin-bottom: 15px;
+        }
+        .setting-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .setting-group input, 
+        .setting-group select {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        .setting-group input[type="password"] {
+            font-family: monospace;
+        }
+        .btn-test {
+            background: var(--accent-yellow);
+            color: var(--bg-primary);
+        }
+        .btn-test:hover {
+            background: #f59e0b;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-success { background: var(--accent-green); color: var(--bg-primary); }
+        .status-error { background: var(--accent-red); color: white; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-headset"></i>
+                <span>NOC Helpdesk</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item" data-page="dashboard">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="index.html" class="nav-item" data-page="tickets">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="index.html" class="nav-item" data-page="knowledge">
+                    <i class="fas fa-book"></i>
+                    <span>Knowledge Base</span>
+                </a>
+                <a href="admin.html" class="nav-item active">
+                    <i class="fas fa-cog"></i>
+                    <span>Admin Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Admin Settings</h1>
+                <div class="user-info">
+                    <span class="status-indicator">🟢 Online</span>
+                    <span class="user-name">Admin</span>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div class="settings-container">
+                    <div class="settings-card">
+                        <h3>📧 Email Configuration</h3>
+                        <p style="color:var(--text-secondary);margin-bottom:20px;">
+                            Configure email settings for automatic ticket creation from emails.
+                        </p>
+                        
+                        <div class="setting-group">
+                            <label>Email Host</label>
+                            <input type="text" id="emailHost" placeholder="imap.gmail.com" value="imap.gmail.com">
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label>Email Username</label>
+                            <input type="email" id="emailUsername" placeholder="support@yourcompany.com">
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label>Email Password</label>
+                            <input type="password" id="emailPassword" placeholder="Your app password">
+                            <small style="color:var(--text-secondary);font-size:12px;">
+                                For Gmail, use an <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent-blue);">App Password</a>
+                            </small>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label>Email Port</label>
+                            <input type="number" id="emailPort" placeholder="993" value="993">
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label>Check Interval (minutes)</label>
+                            <input type="number" id="checkInterval" placeholder="5" value="5">
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label>Auto-Ticket Enabled</label>
+                            <select id="autoEnabled">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="saveSettings()">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                            <button class="btn btn-test" onclick="testConnection()">
+                                <i class="fas fa-vial"></i> Test Connection
+                            </button>
+                            <button class="btn btn-success" onclick="loadSettings()">
+                                <i class="fas fa-sync"></i> Load Settings
+                            </button>
+                        </div>
+                        
+                        <div id="statusMessage" style="margin-top:20px;display:none;"></div>
+                    </div>
+                    
+                    <div class="settings-card">
+                        <h3>📊 Email Processing Stats</h3>
+                        <div id="emailStats">
+                            <p>Loading stats...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${API_BASE}/settings`);
+                const data = await response.json();
+                
+                document.getElementById('emailHost').value = data.EMAIL_HOST || 'imap.gmail.com';
+                document.getElementById('emailUsername').value = data.EMAIL_USERNAME || '';
+                document.getElementById('emailPassword').value = data.EMAIL_PASSWORD || '';
+                document.getElementById('emailPort').value = data.EMAIL_PORT || '993';
+                document.getElementById('checkInterval').value = data.EMAIL_CHECK_INTERVAL || '5';
+                document.getElementById('autoEnabled').value = data.EMAIL_AUTO_TICKET_ENABLED || 'true';
+                
+                showStatus('success', 'Settings loaded successfully!');
+            } catch (error) {
+                showStatus('error', 'Failed to load settings: ' + error.message);
+            }
+        }
+        
+        async function saveSettings() {
+            const settings = {
+                EMAIL_HOST: document.getElementById('emailHost').value,
+                EMAIL_USERNAME: document.getElementById('emailUsername').value,
+                EMAIL_PASSWORD: document.getElementById('emailPassword').value,
+                EMAIL_PORT: document.getElementById('emailPort').value,
+                EMAIL_CHECK_INTERVAL: document.getElementById('checkInterval').value,
+                EMAIL_AUTO_TICKET_ENABLED: document.getElementById('autoEnabled').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/settings/email`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                const data = await response.json();
+                showStatus('success', '✅ Settings saved successfully!');
+                loadEmailStats();
+            } catch (error) {
+                showStatus('error', 'Failed to save settings: ' + error.message);
+            }
+        }
+        
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/settings/email/test`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showStatus('success', '✅ ' + data.message);
+                } else {
+                    showStatus('error', '❌ ' + data.message);
+                }
+            } catch (error) {
+                showStatus('error', 'Connection test failed: ' + error.message);
+            }
+        }
+        
+        async function loadEmailStats() {
+            try {
+                const response = await fetch(`${API_BASE}/email/stats`);
+                const data = await response.json();
+                
+                const statsHtml = `
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-top:10px;">
+                        <div style="background:var(--bg-primary);padding:15px;border-radius:8px;">
+                            <div style="color:var(--text-secondary);font-size:12px;">Total Processed</div>
+                            <div style="font-size:24px;font-weight:700;color:var(--accent-blue);">${data.total_processed || 0}</div>
+                        </div>
+                        <div style="background:var(--bg-primary);padding:15px;border-radius:8px;">
+                            <div style="color:var(--text-secondary);font-size:12px;">Today</div>
+                            <div style="font-size:24px;font-weight:700;color:var(--accent-green);">${data.today || 0}</div>
+                        </div>
+                        <div style="background:var(--bg-primary);padding:15px;border-radius:8px;">
+                            <div style="color:var(--text-secondary);font-size:12px;">Failed</div>
+                            <div style="font-size:24px;font-weight:700;color:var(--accent-red);">${data.failed || 0}</div>
+                        </div>
+                        <div style="background:var(--bg-primary);padding:15px;border-radius:8px;">
+                            <div style="color:var(--text-secondary);font-size:12px;">Success Rate</div>
+                            <div style="font-size:24px;font-weight:700;color:var(--accent-yellow);">${data.success_rate || 0}%</div>
+                        </div>
+                    </div>
+                    ${data.last_processed ? `<p style="color:var(--text-secondary);font-size:12px;margin-top:10px;">Last processed: ${new Date(data.last_processed).toLocaleString()}</p>` : ''}
+                `;
+                
+                document.getElementById('emailStats').innerHTML = statsHtml;
+            } catch (error) {
+                document.getElementById('emailStats').innerHTML = '<p style="color:var(--text-secondary);">Failed to load stats</p>';
+            }
+        }
+        
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `<div class="status-badge ${type === 'success' ? 'status-success' : 'status-error'}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Load settings and stats on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            loadEmailStats();
+            // Refresh stats every 30 seconds
+            setInterval(loadEmailStats, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug</title>
+</head>
+<body style="background:#0a0e17;color:#fff;padding:20px;font-family:monospace;">
+    <h1>🔍 Debug: API Connection Test</h1>
+    <button onclick="testAPI()" style="padding:10px 20px;background:#4a9eff;border:none;color:#fff;border-radius:5px;cursor:pointer;font-size:16px;">Test API</button>
+    <div id="result" style="margin-top:20px;background:#1a2332;padding:20px;border-radius:5px;white-space:pre-wrap;max-height:600px;overflow:auto;border:1px solid #2a3a4a;"></div>
+    
+    <script>
+    async function testAPI() {
+        const result = document.getElementById('result');
+        result.textContent = '🔍 Testing API connection...\n\n';
+        
+        // Test 1: Check if backend is reachable
+        try {
+            result.textContent += '📡 Test 1: GET /\n';
+            const r1 = await fetch('http://localhost:8000/');
+            const d1 = await r1.json();
+            result.textContent += '✅ GET / succeeded!\n';
+            result.textContent += '   Response: ' + JSON.stringify(d1, null, 2) + '\n\n';
+        } catch (e) {
+            result.textContent += '❌ GET / failed!\n';
+            result.textContent += '   Error: ' + e.message + '\n\n';
+        }
+        
+        // Test 2: Get tickets
+        try {
+            result.textContent += '📡 Test 2: GET /api/tickets/\n';
+            const r2 = await fetch('http://localhost:8000/api/tickets/');
+            const d2 = await r2.json();
+            result.textContent += '✅ GET /api/tickets/ succeeded!\n';
+            result.textContent += '   Response: ' + JSON.stringify(d2, null, 2) + '\n\n';
+        } catch (e) {
+            result.textContent += '❌ GET /api/tickets/ failed!\n';
+            result.textContent += '   Error: ' + e.message + '\n\n';
+        }
+        
+        // Test 3: Create ticket
+        try {
+            result.textContent += '📡 Test 3: POST /api/tickets/\n';
+            const r3 = await fetch('http://localhost:8000/api/tickets/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    title: 'Debug Test Ticket',
+                    description: 'Created from debug page at ' + new Date().toLocaleTimeString(),
+                    category: 'Network',
+                    priority: 'Medium',
+                    reporter_name: 'Debug Tester'
+                })
+            });
+            const d3 = await r3.json();
+            result.textContent += '✅ POST /api/tickets/ succeeded!\n';
+            result.textContent += '   Created Ticket: ' + JSON.stringify(d3, null, 2) + '\n\n';
+        } catch (e) {
+            result.textContent += '❌ POST /api/tickets/ failed!\n';
+            result.textContent += '   Error: ' + e.message + '\n\n';
+        }
+        
+        result.textContent += '✅ Test complete!';
+    }
+    </script>
+</body>
+</html>
