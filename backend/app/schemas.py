@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 from typing import Optional, List, Dict
 from enum import Enum
@@ -26,20 +26,23 @@ class TicketSource(str, Enum):
     EMAIL = "Email"
     API = "API"
 
-# Ticket Schemas
+# ============================================
+# TICKET SCHEMAS - FIXED
+# ============================================
+
 class TicketBase(BaseModel):
     title: str = Field(..., max_length=200)
     description: str
     category: TicketCategory
     priority: TicketPriority = TicketPriority.MEDIUM
-    reporter_name: str = Field(..., max_length=100)
-    assigned_to: Optional[str] = Field(None, max_length=100)
+    assigned_to: Optional[str] = None  # ADDED - allows assigning on creation
 
 class TicketCreate(TicketBase):
     source: Optional[TicketSource] = TicketSource.MANUAL
     email_message_id: Optional[str] = None
     email_from: Optional[str] = None
     email_subject: Optional[str] = None
+    # assigned_to is inherited from TicketBase
 
 class TicketUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=200)
@@ -61,10 +64,17 @@ class Ticket(TicketBase):
     processed_at: Optional[datetime] = None
     email_attachments: Optional[List[Dict]] = None
     
+    # User relationships (return as dict with user info)
+    reporter: Optional[dict] = None
+    assigned_to: Optional[dict] = None
+    
     class Config:
         from_attributes = True
 
-# Activity Schemas
+# ============================================
+# ACTIVITY SCHEMAS
+# ============================================
+
 class ActivityBase(BaseModel):
     ticket_id: int
     action: str = Field(..., max_length=100)
@@ -80,7 +90,10 @@ class Activity(ActivityBase):
     class Config:
         from_attributes = True
 
-# Resolution Schemas
+# ============================================
+# RESOLUTION SCHEMAS
+# ============================================
+
 class ResolutionBase(BaseModel):
     root_cause: str
     troubleshooting_steps: str
@@ -98,7 +111,10 @@ class Resolution(ResolutionBase):
     class Config:
         from_attributes = True
 
-# Knowledge Article Schemas
+# ============================================
+# KNOWLEDGE ARTICLE SCHEMAS
+# ============================================
+
 class KnowledgeArticleBase(BaseModel):
     title: str = Field(..., max_length=200)
     problem: str
@@ -116,7 +132,10 @@ class KnowledgeArticle(KnowledgeArticleBase):
     class Config:
         from_attributes = True
 
-# Dashboard Schemas
+# ============================================
+# DASHBOARD SCHEMAS
+# ============================================
+
 class DashboardStats(BaseModel):
     total_tickets: int
     open_tickets: int
@@ -125,7 +144,10 @@ class DashboardStats(BaseModel):
     critical_tickets: int
     most_common_category: Optional[str]
 
-# Email Log Schemas
+# ============================================
+# EMAIL LOG SCHEMAS
+# ============================================
+
 class EmailLogBase(BaseModel):
     message_id: str
     from_address: str
@@ -151,3 +173,39 @@ class EmailStats(BaseModel):
     failed: int
     success_rate: float
     last_processed: Optional[datetime]
+
+# ============================================
+# USER AUTHENTICATION SCHEMAS
+# ============================================
+
+class UserBase(BaseModel):
+    email: EmailStr
+    username: str = Field(..., min_length=3, max_length=50)
+    full_name: Optional[str] = None
+    role: str = "user"
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: Optional[dict] = None
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+    user_id: Optional[int] = None
+    role: Optional[str] = None
+
+class User(UserBase):
+    id: int
+    is_active: bool
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True

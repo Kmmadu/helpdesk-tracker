@@ -85,39 +85,13 @@
         </div>
     </div>
 
-    <!-- Floating Support Button -->
-    <div class="support-float" id="supportFloat" onclick="toggleSupport()">
-        <div class="support-float-icon">
-            <i class="fas fa-headset"></i>
-        </div>
-        <div class="support-float-pulse"></div>
-    </div>
-
-    <!-- Support Modal -->
-    <div class="support-modal" id="supportModal">
-        <div class="support-modal-content">
-            <div class="support-modal-header">
-                <i class="fas fa-headset"></i>
-                <h3>Support Center</h3>
-                <span class="support-modal-close" onclick="closeSupport()">&times;</span>
-            </div>
-            <div class="support-modal-body">
-                <p><i class="fas fa-phone"></i> Call: <strong>+1 (555) 123-4567</strong></p>
-                <p><i class="fas fa-envelope"></i> Email: <strong>support@helpdesk.com</strong></p>
-                <p><i class="fas fa-clock"></i> Hours: <strong>24/7</strong></p>
-                <hr>
-                <p><i class="fas fa-ticket-alt"></i> <a href="#" onclick="closeSupport();document.querySelector('[data-page=\"new-ticket\"]').click();">Create a Ticket</a></p>
-            </div>
-        </div>
-    </div>
-
     <script src="js/api.js?v=2"></script>
     <script src="js/dashboard.js?v=2"></script>
     <script src="js/tickets.js?v=2"></script>
     <script src="js/knowledge.js?v=2"></script>
     <script src="js/app.js?v=2"></script>
     
-    <!-- Mobile menu toggle and support scripts -->
+    <!-- Mobile menu toggle script -->
     <script>
         // Mobile menu functionality
         document.addEventListener('DOMContentLoaded', function() {
@@ -163,31 +137,6 @@
                     menuIcon.className = 'fas fa-bars';
                 }
             });
-        });
-
-        // Support Functions
-        function toggleSupport() {
-            const modal = document.getElementById('supportModal');
-            if (modal.style.display === 'block') {
-                modal.style.display = 'none';
-            } else {
-                modal.style.display = 'block';
-            }
-        }
-
-        function closeSupport() {
-            document.getElementById('supportModal').style.display = 'none';
-        }
-
-        // Close support modal on outside click
-        document.addEventListener('click', function(e) {
-            const modal = document.getElementById('supportModal');
-            const floatBtn = document.getElementById('supportFloat');
-            if (modal && modal.style.display === 'block') {
-                if (!modal.contains(e.target) && !floatBtn.contains(e.target)) {
-                    modal.style.display = 'none';
-                }
-            }
         });
     </script>
 </body>

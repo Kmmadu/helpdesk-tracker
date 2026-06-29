@@ -3,10 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 from datetime import datetime, timedelta
-from .routes import tickets, activities, knowledge, dashboard, settings
 
 from .database import engine, Base, get_db
-from .routes import tickets, activities, knowledge, dashboard
+from .routes import tickets, activities, knowledge, dashboard, settings, auth
 from .services.email_processor import EmailScheduler
 from .models import EmailLog
 from sqlalchemy.orm import Session
@@ -64,6 +63,7 @@ app.include_router(activities.router, prefix="/api/activities", tags=["activitie
 app.include_router(knowledge.router, prefix="/api/knowledge", tags=["knowledge"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(settings.router, prefix="/api", tags=["settings"])
+app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 
 @app.get("/api/debug/routes")
 def debug_routes():
@@ -84,7 +84,6 @@ def debug_routes():
 def root():
     return {"message": "Helpdesk Ticketing System API"}
 
-# Optional: Add a manual trigger endpoint for testing
 @app.post("/api/email/process")
 def process_emails_now():
     """Manually trigger email processing (for testing purposes)"""
@@ -107,7 +106,6 @@ def get_email_stats(db: Session = Depends(get_db)):
     
     success_rate = ((total - failed) / total * 100) if total > 0 else 0
     
-    # Get last processed time
     last = db.query(EmailLog).order_by(EmailLog.processed_at.desc()).first()
     
     return {

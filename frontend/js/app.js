@@ -1,6 +1,63 @@
-// App initialization
+// ============================================
+// AUTHENTICATION CHECK
+// ============================================
+
+// Check if user is authenticated
+if (!localStorage.getItem('access_token')) {
+    window.location.href = '/login.html';
+}
+
+// ============================================
+// MAIN APP INITIALIZATION
+// ============================================
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('App initialized');
+    
+    // Update user info in header
+    const userInfo = document.querySelector('.user-info');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (user && userInfo) {
+        // Update username
+        const userNameSpan = userInfo.querySelector('.user-name');
+        if (userNameSpan) {
+            userNameSpan.textContent = user.full_name || user.username || 'User';
+        }
+        
+        // Add logout button if not exists
+        if (!document.getElementById('logoutBtn')) {
+            const logoutBtn = document.createElement('button');
+            logoutBtn.id = 'logoutBtn';
+            logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+            logoutBtn.style.cssText = `
+                background: transparent;
+                border: 1px solid var(--border-color);
+                color: var(--text-secondary);
+                padding: 6px 14px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+                transition: all 0.3s ease;
+                font-family: 'Inter', sans-serif;
+                margin-left: 12px;
+            `;
+            logoutBtn.onmouseover = function() {
+                this.style.borderColor = 'var(--accent-red)';
+                this.style.color = 'var(--accent-red)';
+            };
+            logoutBtn.onmouseout = function() {
+                this.style.borderColor = 'var(--border-color)';
+                this.style.color = 'var(--text-secondary)';
+            };
+            logoutBtn.onclick = function() {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            };
+            userInfo.appendChild(logoutBtn);
+        }
+    }
     
     // Load dashboard by default
     Dashboard.render();
@@ -61,7 +118,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// New Ticket Form
+// ============================================
+// NEW TICKET FORM
+// ============================================
+
 function showNewTicketForm() {
     console.log('Showing new ticket form...');
     
@@ -100,13 +160,11 @@ function showNewTicketForm() {
                         <option value="Critical">🔴 Critical</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Reporter Name *</label>
-                    <input type="text" id="reporterName" placeholder="Your full name" required>
-                </div>
+                <!-- ASSIGN TO FIELD - ADDED BACK -->
                 <div class="form-group">
                     <label>Assign To</label>
-                    <input type="text" id="assignTo" placeholder="Technician name (optional)">
+                    <input type="text" id="assignTo" placeholder="Username or email (optional)">
+                    <small style="color:var(--text-secondary);font-size:12px;">Leave blank to keep unassigned</small>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;font-size:16px;">
                     <i class="fas fa-plus-circle"></i> Create Ticket
@@ -122,15 +180,27 @@ function showNewTicketForm() {
             console.log('Form submitted');
             
             try {
+                // Get the token
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('❌ Not authenticated! Please login again.');
+                    window.location.href = '/login.html';
+                    return;
+                }
+                
+                // Get assign to value
+                const assignToValue = document.getElementById('assignTo').value.trim();
+                
+                // Prepare ticket data with assigned_to
                 const ticket = {
                     title: document.getElementById('ticketTitle').value.trim(),
                     description: document.getElementById('ticketDescription').value.trim(),
                     category: document.getElementById('ticketCategory').value,
                     priority: document.getElementById('ticketPriority').value,
-                    reporter_name: document.getElementById('reporterName').value.trim(),
-                    assigned_to: document.getElementById('assignTo').value.trim() || null
+                    assigned_to: assignToValue || null
                 };
                 
+                // Validate
                 if (!ticket.title) {
                     alert('Please enter a ticket title');
                     document.getElementById('ticketTitle').focus();
@@ -146,14 +216,11 @@ function showNewTicketForm() {
                     document.getElementById('ticketCategory').focus();
                     return;
                 }
-                if (!ticket.reporter_name) {
-                    alert('Please enter your name');
-                    document.getElementById('reporterName').focus();
-                    return;
-                }
                 
-                console.log('Creating ticket:', ticket);
+                console.log('Creating ticket with data:', ticket);
+                console.log('Using token:', token.substring(0, 20) + '...');
                 
+                // Use ApiClient to post
                 const result = await ApiClient.post('/tickets', ticket);
                 console.log('Ticket created:', result);
                 
@@ -171,7 +238,10 @@ function showNewTicketForm() {
     }
 }
 
-// Admin Settings Page
+// ============================================
+// ADMIN SETTINGS PAGE
+// ============================================
+
 function showAdminPage() {
     console.log('Loading admin page...');
     
@@ -259,7 +329,10 @@ function showAdminPage() {
     window.statsInterval = setInterval(loadEmailStats, 30000);
 }
 
-// Admin Settings Functions
+// ============================================
+// ADMIN SETTINGS FUNCTIONS
+// ============================================
+
 async function loadSettings() {
     const statusDiv = document.getElementById('statusMessage');
     if (statusDiv) {
@@ -406,7 +479,10 @@ function showAdminStatus(type, message) {
     }
 }
 
-// Make functions globally available
+// ============================================
+// MAKE FUNCTIONS GLOBALLY AVAILABLE
+// ============================================
+
 window.showNewTicketForm = showNewTicketForm;
 window.showAdminPage = showAdminPage;
 window.loadSettings = loadSettings;

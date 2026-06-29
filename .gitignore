@@ -1,0 +1,47 @@
+# Python
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+nohup.out
+
+# Environment variables
+.env
+.env.local
+.env.production
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+
+# Frontend
+node_modules/
+npm-debug.log*
+
+# Docker
+*.pid

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, JSON, Boolean, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index, JSON, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
@@ -23,6 +23,24 @@ class TicketCategory(str, enum.Enum):
     SOFTWARE = "Software"
     ACCESS = "Access"
 
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), nullable=False, unique=True, index=True)
+    username = Column(String(50), nullable=False, unique=True, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(100), nullable=True)
+    role = Column(String(20), nullable=False, default="user")  # admin, technician, user
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    last_login = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    tickets_created = relationship("Ticket", foreign_keys="Ticket.reporter_id", back_populates="reporter")
+    tickets_assigned = relationship("Ticket", foreign_keys="Ticket.assigned_to_id", back_populates="assigned_to")
+
 class Ticket(Base):
     __tablename__ = "tickets"
     
@@ -32,20 +50,24 @@ class Ticket(Base):
     category = Column(String(50), nullable=False)
     priority = Column(String(20), nullable=False, default=TicketPriority.MEDIUM.value)
     status = Column(String(20), nullable=False, default=TicketStatus.OPEN.value)
-    reporter_name = Column(String(100), nullable=False)
-    assigned_to = Column(String(100), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Email-specific fields
+    # User relationships (replaces reporter_name and assigned_to)
+    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Email-specific fields (keep for backward compatibility)
     source = Column(String(20), nullable=False, default="Manual")
     email_message_id = Column(String(255), nullable=True, unique=True)
     email_from = Column(String(255), nullable=True)
     email_subject = Column(String(500), nullable=True)
     processed_at = Column(DateTime(timezone=True), nullable=True)
     email_attachments = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
+    reporter = relationship("User", foreign_keys=[reporter_id], back_populates="tickets_created")
+    assigned_to = relationship("User", foreign_keys=[assigned_to_id], back_populates="tickets_assigned")
     activities = relationship("Activity", back_populates="ticket", cascade="all, delete-orphan")
     resolution = relationship("Resolution", back_populates="ticket", uselist=False, cascade="all, delete-orphan")
     
@@ -57,6 +79,8 @@ class Ticket(Base):
         Index('ix_tickets_status', 'status'),
         Index('ix_tickets_category', 'category'),
         Index('ix_tickets_priority', 'priority'),
+        Index('ix_tickets_reporter_id', 'reporter_id'),
+        Index('ix_tickets_assigned_to_id', 'assigned_to_id'),
     )
 
 class Activity(Base):
