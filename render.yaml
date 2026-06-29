@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: helpdesk-tracker-backend
+    env: python
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: helpdesk-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: EMAIL_AUTO_TICKET_ENABLED
+        value: false
+      - key: DEFAULT_TICKET_PRIORITY
+        value: Medium
+      - key: DEFAULT_TICKET_CATEGORY
+        value: Network
+
+databases:
+  - name: helpdesk-db
+    databaseName: helpdesk
+    user: helpdesk_user
+    plan: free
