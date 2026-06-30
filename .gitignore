@@ -39,6 +39,15 @@ Thumbs.db
 *.backup
 *.bak
 
+# Deployment
+Procfile
+nixpacks.toml
+runtime.txt
+setup.sh
+render.yaml
+Dockerfile
+docker-compose.yml
+
 # Frontend
 node_modules/
 npm-debug.log*
