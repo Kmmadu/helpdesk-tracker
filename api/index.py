@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-# Create a new FastAPI app
+# Create a simple, standalone FastAPI app
 app = FastAPI(title="Helpdesk API", version="1.0.0")
 
 @app.get("/")
@@ -14,3 +14,8 @@ def test():
 @app.get("/api/health")
 def health():
     return {"status": "healthy", "service": "helpdesk-tracker"}
+
+# Add a simple echo endpoint to test POST requests
+@app.post("/api/echo")
+def echo(data: dict):
+    return {"received": data, "status": "ok"}
