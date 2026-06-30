@@ -1,9 +1,11 @@
-import sys
-import os
+from fastapi import FastAPI
 
-# Add the backend directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+app = FastAPI()
 
-from app.main import app
+@app.get("/")
+def root():
+    return {"message": "Helpdesk API is running!"}
 
-# Vercel expects a variable named 'app'
+@app.get("/test")
+def test():
+    return {"status": "ok", "message": "Vercel deployment working!"}
